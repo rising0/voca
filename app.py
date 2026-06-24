@@ -8,9 +8,7 @@ st.set_page_config(page_title="영단어 퀴즈", page_icon="📘")
 
 def clean_words(df):
     df = df.dropna(subset=WORD_COLUMNS).copy()
-    df[WORD_COLUMNS] = df[WORD_COLUMNS].apply(
-        lambda col: col.astype(str).str.strip()
-    )
+    df[WORD_COLUMNS] = df[WORD_COLUMNS].apply(lambda col: col.astype(str).str.strip())
     df = df[(df["eng"] != "") & (df["kor"] != "")]
 
     duplicate_key = df["eng"].str.casefold()
@@ -57,16 +55,19 @@ def reset_quiz(day_name, df):
     st.session_state.correct_count = 0
     st.session_state.answered = False
     st.session_state.wrong_words = []
-    st.session_state.answer = ""
+    st.session_state.result = None
+    st.session_state.input_clear_count = 0
 
 
 def next_question():
     st.session_state.current_index += 1
     st.session_state.answered = False
+    st.session_state.result = None
+    st.session_state.input_clear_count += 1
 
 
-def check_answer():
-    answer = st.session_state.answer.strip()
+def check_answer(answer):
+    answer = answer.strip()
 
     if not answer:
         st.session_state.result = ("답을 입력해 주세요.", "info")
@@ -82,9 +83,7 @@ def check_answer():
         st.session_state.correct_count += 1
         st.session_state.result = (f"정답 · {korean}", "success")
     else:
-        st.session_state.wrong_words.append(
-            {"eng": row["eng"], "kor": row["kor"]}
-        )
+        st.session_state.wrong_words.append({"eng": row["eng"], "kor": row["kor"]})
         st.session_state.result = (f"오답 · {korean}", "error")
 
     st.session_state.answered = True
@@ -92,10 +91,7 @@ def check_answer():
 
 st.title("📘 영단어 퀴즈")
 
-uploaded_file = st.file_uploader(
-    "엑셀 파일을 업로드하세요",
-    type=["xlsx"],
-)
+uploaded_file = st.file_uploader("엑셀 파일을 업로드하세요", type=["xlsx"])
 
 if uploaded_file is None:
     st.info("word.xlsx 파일을 업로드하면 Day 선택 화면이 나옵니다.")
@@ -120,7 +116,7 @@ if "df" not in st.session_state:
     st.session_state.answered = False
     st.session_state.wrong_words = []
     st.session_state.result = None
-    st.session_state.answer = ""
+    st.session_state.input_clear_count = 0
 
 
 if st.session_state.current_day_name == "":
@@ -151,9 +147,7 @@ if st.session_state.current_day_name == "":
         reset_quiz("전체 Day", all_words)
         st.rerun()
 
-    st.caption(
-        "엑셀 오른쪽에 두 열씩 day3, day4를 추가하면 자동으로 Day가 추가됩니다."
-    )
+    st.caption("엑셀 오른쪽에 두 열씩 day3, day4를 추가하면 자동으로 Day가 추가됩니다.")
 
 else:
     df = st.session_state.df
@@ -221,11 +215,26 @@ else:
             unsafe_allow_html=True,
         )
 
-        st.text_input(
-            "뜻을 입력하세요",
-            key="answer",
-            disabled=st.session_state.answered,
-        )
+        form_key = f"quiz_form_{index}_{st.session_state.input_clear_count}"
+
+        with st.form(key=form_key):
+            answer = st.text_input(
+                "뜻을 입력하세요",
+                disabled=st.session_state.answered,
+            )
+
+            submitted = st.form_submit_button(
+                "다음 문제" if st.session_state.answered else "정답 확인",
+                use_container_width=True,
+            )
+
+        if submitted:
+            if st.session_state.answered:
+                next_question()
+                st.rerun()
+            else:
+                check_answer(answer)
+                st.rerun()
 
         if st.session_state.result:
             message, kind = st.session_state.result
@@ -238,13 +247,3 @@ else:
                 st.info(message)
 
         st.write(f"정답 {st.session_state.correct_count}개")
-
-        if st.session_state.answered:
-            if st.button("다음 문제", use_container_width=True):
-                next_question()
-                st.session_state.result = None
-                st.rerun()
-        else:
-            if st.button("정답 확인", use_container_width=True):
-                check_answer()
-                st.rerun()
