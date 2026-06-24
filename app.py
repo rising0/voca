@@ -63,7 +63,6 @@ def reset_quiz(day_name, df):
 def next_question():
     st.session_state.current_index += 1
     st.session_state.answered = False
-    st.session_state.answer = ""
 
 
 def check_answer():
