@@ -1,5 +1,6 @@
 import pandas as pd
 import streamlit as st
+import streamlit.components.v1 as components
 
 WORD_COLUMNS = ["eng", "kor"]
 
@@ -258,3 +259,24 @@ else:
                 st.info(message)
 
         st.write(f"정답 {st.session_state.correct_count}개")
+
+        components.html(
+            """
+            <script>
+            const doc = window.parent.document;
+
+            doc.addEventListener("keydown", function(e) {
+                if (e.key === "Enter") {
+                    const buttons = doc.querySelectorAll("button");
+                    for (const btn of buttons) {
+                        if (btn.innerText.includes("정답 확인") || btn.innerText.includes("다음 문제")) {
+                            btn.click();
+                            break;
+                        }
+                    }
+                }
+            });
+            </script>
+            """,
+            height=0,
+        )
