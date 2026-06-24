@@ -230,7 +230,8 @@ else:
         with st.form(key=form_key):
             answer = st.text_input(
                 "뜻을 입력하세요",
-                disabled=st.session_state.answered,
+                value="",
+                placeholder="Enter를 누르면 진행됩니다",
             )
 
             submitted = st.form_submit_button(
