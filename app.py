@@ -232,6 +232,7 @@ else:
                 "뜻을 입력하세요",
                 value="",
                 placeholder="Enter를 누르면 진행됩니다",
+                autofocus=True,
             )
 
             submitted = st.form_submit_button(
