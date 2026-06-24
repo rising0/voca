@@ -47,6 +47,19 @@ def split_answers(text):
     }
 
 
+def init_state():
+    if "df" not in st.session_state:
+        st.session_state.df = pd.DataFrame(columns=WORD_COLUMNS)
+        st.session_state.quiz_source = pd.DataFrame(columns=WORD_COLUMNS)
+        st.session_state.current_day_name = ""
+        st.session_state.current_index = 0
+        st.session_state.correct_count = 0
+        st.session_state.answered = False
+        st.session_state.wrong_words = []
+        st.session_state.result = None
+        st.session_state.input_clear_count = 0
+
+
 def reset_quiz(day_name, df):
     st.session_state.current_day_name = day_name
     st.session_state.quiz_source = df.copy().reset_index(drop=True)
@@ -89,6 +102,8 @@ def check_answer(answer):
     st.session_state.answered = True
 
 
+init_state()
+
 st.title("📘 영단어 퀴즈")
 
 uploaded_file = st.file_uploader("엑셀 파일을 업로드하세요", type=["xlsx"])
@@ -106,17 +121,6 @@ except Exception as e:
 if not days:
     st.error("불러온 단어가 없습니다. 엑셀 구조를 확인하세요.")
     st.stop()
-
-if "df" not in st.session_state:
-    st.session_state.df = pd.DataFrame(columns=WORD_COLUMNS)
-    st.session_state.quiz_source = pd.DataFrame(columns=WORD_COLUMNS)
-    st.session_state.current_day_name = ""
-    st.session_state.current_index = 0
-    st.session_state.correct_count = 0
-    st.session_state.answered = False
-    st.session_state.wrong_words = []
-    st.session_state.result = None
-    st.session_state.input_clear_count = 0
 
 
 if st.session_state.current_day_name == "":
@@ -187,6 +191,7 @@ else:
         with col3:
             if st.button("메인 화면", use_container_width=True):
                 st.session_state.current_day_name = ""
+                st.session_state.result = None
                 st.rerun()
 
     else:
@@ -197,6 +202,7 @@ else:
         with top_col1:
             if st.button("메인 화면"):
                 st.session_state.current_day_name = ""
+                st.session_state.result = None
                 st.rerun()
 
         with top_col2:
@@ -215,7 +221,11 @@ else:
             unsafe_allow_html=True,
         )
 
-        form_key = f"quiz_form_{index}_{st.session_state.input_clear_count}"
+        form_key = (
+            f"quiz_form_{index}_"
+            f"{st.session_state.answered}_"
+            f"{st.session_state.input_clear_count}"
+        )
 
         with st.form(key=form_key):
             answer = st.text_input(
